@@ -1,0 +1,162 @@
+openapi: "3.0.3"
+
+info:
+  title: "クイズapi"
+  description: "クイズサイト用のapiです"
+  version: "1.0.0"
+
+servers:
+  - url: "http://localhost/api"
+    description: "ローカル環境"
+
+paths:
+  "/quizes":
+    get:
+      tags:
+        - quizes
+      summary: "クイズ一覧取得(user)"
+      deprecated: false
+      operationId: "GetAllQuizes"
+      responses:
+        "200":
+          $ref: '#/components/responses/QuizesResponse'
+  "/admin/quizes":
+    post:
+      tags:
+        - quizes
+      summary: "新規クイズ作成(admin)"
+      operationId: "CreateQuiz"
+      requestBody:
+        description: "一問クイズ作成"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Quiz"
+
+      responses:
+        "201":
+          $ref: '#/components/responses/QuizesResponse'
+        "400":
+          description: "Client side error"
+
+    get:
+      tags:
+        - quizes
+      summary: "クイズ一覧取得(admin)"
+      deprecated: false
+      operationId: "GetAllQuizesForAdmin"
+      responses:
+        "200":
+          $ref: '#/components/responses/QuizesResponse'
+
+  "/admin/quizes/{quizId}":
+    get:
+      tags:
+        - quizes
+      summary: "クイズ一問取得(admin)"
+      deprecated: false
+      operationId: "GetQuiz"
+      parameters:
+        - name: quizId
+          in: path
+          required: true
+          schema: { type:integer }
+      responses:
+        "200":
+          $ref: "#/components/responses/QuizResponse"
+
+    put:
+      tags:
+        - quizes
+      summary: "クイズ編集(admin)"
+      deprecated: false
+      operationId: "EditQuiz"
+      parameters:
+        - name: quizId
+          in: path
+          required: true
+          schema: { type:integer }
+      requestBody:
+        description: "クイズ内容"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Quiz"
+      responses:
+        "201":
+          $ref: "#/components/responses/QuizResponse"
+    delete:
+      tags:
+        - quizes
+      summary: "クイズ削除(admin)"
+      deprecated: false
+      operationId: "DeleteQuiz"
+      parameters:
+        - name: quizId
+          in: path
+          required: true
+          schema: { type:integer }
+      responses:
+        "204":
+          description: "No Content"
+
+components:
+  responses:
+    QuizResponse:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Quiz"
+      description: "成功"
+    QuizesResponse:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/Quiz"
+      description: "成功"
+
+  schemas:
+    Quiz:
+      type: object
+      properties:
+        content:
+          type: string
+          example: "これは誰でしょう"
+        image:
+          type: string
+          example: "image.png"
+        supplement:
+          type: string
+          example: "1年前の写真です"
+        choices:
+          type: array
+          items:
+            $ref: "#/components/schemas/Choice"
+      required:
+        - content
+
+    #選択肢
+    Choice:
+      type: object
+      properties:
+        question_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "ひなのです"
+        valid:
+          type: boolean
+          example: true
+      required:
+        - question_id
+        - name
+        - valid
+
+tags:
+  - name: quizes
+    description: "クイズ関連"
