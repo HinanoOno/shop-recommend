@@ -16,5 +16,9 @@ class DatabaseSeeder extends Seeder
             QuestionSeeder::class,
             ChoiceSeeder::class
         ]);
+        \App\Models\User::factory()->create([
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+        ]);
     }
 }
