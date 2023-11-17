@@ -11,7 +11,18 @@ class Rating extends Model
 
     public function user() { 
         
-        return $this->belongsTo(\App\Models\User::class)
+        return $this->belongsTo(\App\Models\User::class);
 
     }
+    
+    public function shop() { 
+        
+        return $this->belongsTo(\App\Models\Rating::class);
+
+    }
+    protected $fillable = [
+        'user_id',
+        'shop_id',
+        'rating'
+    ];
 }

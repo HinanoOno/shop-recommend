@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\QuestionController;
 use App\Http\Controllers\PythonController;
+use App\Http\Controllers\RatingController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -29,7 +30,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::prefix('v1')->group(function () {
+/*Route::prefix('v1')->group(function () {
     Route::post('/shops/{shopId}/likes', [LikeController::class, 'likeShop'])
         ->name('likeShop')
         ->where('shopId', '[0-9]+');
@@ -38,4 +39,14 @@ Route::prefix('v1')->group(function () {
     Route::delete('/shops/{shopId}/likes/{likeId}', [LikeController::class, 'deleteLike'])
         ->name('deleteLike')
         ->where(['shopId' => '[0-9]+', 'likeId' => '[0-9]+']);
+});*/
+
+Route::prefix('v1')->group(function () {
+    Route::post('/users/{user_id}/saved_shops', [RatingController::class, 'post'])
+        ->name('postRate');
+    Route::get('/users/{user_id}/saved_shops', [RatingController::class, 'get'])
+        ->name('getRate');
+
+    Route::delete('/users/{user_id}/saved_shops/{shop_id}', [RatingController::class, 'delete'])
+        ->name('deleteRate');
 });

@@ -14,7 +14,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             QuestionSeeder::class,
-            ChoiceSeeder::class
+            ChoiceSeeder::class,
+            RatingSeeder::class,
         ]);
         \App\Models\User::factory()->create([
             'name' => 'Test User',

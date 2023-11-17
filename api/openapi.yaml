@@ -202,7 +202,7 @@ paths:
             type: integer
       responses:
         "200":
-          $ref: "#/components/responses/UserShopsRateResponse"
+          $ref: "#/components/responses/UserShopsRatingResponse"
         "404":
           description: "User not found"
 
@@ -233,7 +233,7 @@ paths:
               shop_id: 123
       responses:
         "201":
-          $ref: "#/components/responses/UserShopRateResponse"
+          $ref: "#/components/responses/UserShopRatingResponse"
         "404":
           description: "User not found"
 
@@ -363,6 +363,9 @@ components:
         id:
           type: integer
           example: 1
+        shop_id:
+          type: string
+          example: "JJ0000"
         name:
           type: string
           example: "俺のフレンチ 東京"
@@ -385,6 +388,7 @@ components:
             example: "https://example.com/photo1.png"
       required:
         - id
+        - shop_id
         - name
 
     Shops:
