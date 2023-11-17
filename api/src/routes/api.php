@@ -15,12 +15,13 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
-Route::prefix('v1/admin')->group(function(){
-    Route::apiResource('/quizes',QuestionController::class)->parameters(['quizes' => 'quizId']);;
+
+Route::prefix('v1/admin')->group(function () {
+    Route::apiResource('/quizes', QuestionController::class)->parameters(['quizes' => 'quizId']);;
 });
 
-Route::prefix('v1')->group(function(){
-    Route::apiResource('/python',PythonController::class);
+Route::prefix('v1')->group(function () {
+    Route::apiResource('/python', PythonController::class);
 });
 
 
@@ -28,3 +29,13 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+Route::prefix('v1')->group(function () {
+    Route::post('/shops/{shopId}/likes', [LikeController::class, 'likeShop'])
+        ->name('likeShop')
+        ->where('shopId', '[0-9]+');
+
+    // ショップのいいねを外す
+    Route::delete('/shops/{shopId}/likes/{likeId}', [LikeController::class, 'deleteLike'])
+        ->name('deleteLike')
+        ->where(['shopId' => '[0-9]+', 'likeId' => '[0-9]+']);
+});
