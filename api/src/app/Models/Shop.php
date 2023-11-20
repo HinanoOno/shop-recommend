@@ -20,7 +20,7 @@ class Shop extends Model
     ];
 
     // $castsプロパティを使用してJSON形式のフィールドをキャストします。
-    /*protected $casts = [
+    protected $casts = [
         'photo' => 'array', // 'array' に変更
-    ];*/
+    ];
 }

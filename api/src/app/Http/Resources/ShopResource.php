@@ -22,7 +22,7 @@ class ShopResource extends JsonResource
             'logo_image' => $this->logo_image,
             'genre' => $this->genre,
             'url' => $this->url,
-            'photo' => json_decode($this->photo), // JSON形式のデータをデコード
+            'photo' => $this->photo, // JSON形式のデータをデコード
         ];
     }
 }

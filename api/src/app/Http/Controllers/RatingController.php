@@ -15,9 +15,11 @@ class RatingController extends Controller
     {
         $userRatings = Rating::where('user_id', $user_id)->get();
 
-        if ($userRatings->isEmpty()) {
-            return response()->json(['message' => 'User not found'], 404);
+        
+        if ($userRatings == null) {
+            return null;
         }
+
 
         return RatingResource::collection($userRatings);
     }

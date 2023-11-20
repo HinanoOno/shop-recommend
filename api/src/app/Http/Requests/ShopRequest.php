@@ -28,7 +28,7 @@ class ShopRequest extends FormRequest
             'logo_image' => 'string|max:255',
             'genre' => 'string|max:255',
             'url' => 'string|url',
-            'photo' => 'json', // 配列であることを確認
+            'photo' => 'array', // 配列であることを確認
             'photo.*' => 'string|url', 
         ];
     }
