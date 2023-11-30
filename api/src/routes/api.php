@@ -19,11 +19,11 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('v1/admin')->group(function () {
-    Route::apiResource('/quizes', QuestionController::class)->parameters(['quizes' => 'quizId']);;
+    Route::apiResource('/quizes', QuestionController::class)->parameters(['quizes' => 'quizId']);
 });
 
 Route::prefix('v1')->group(function () {
-    Route::apiResource('/python', PythonController::class);
+    Route::apiResource('/python', PythonController::class)->parameters(['python' => 'user_id']);
 });
 
 

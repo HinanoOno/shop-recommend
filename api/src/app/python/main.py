@@ -37,7 +37,6 @@ def search_hotpepper(keyword):
         print(f'Error {response.status_code} - {response.text}')
 
 if __name__ == "__main__":
-    # コマンドライン引数からキーワードを取得
     keyword = sys.argv[1] if len(sys.argv) > 1 else '俺のフレンチ'
 
     # 検索関数を呼び出し

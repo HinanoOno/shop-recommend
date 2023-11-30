@@ -106,7 +106,7 @@ paths:
   "/python":
     post:
       tags:
-        - shopsearch
+        - shops
       summary: "店検索"
       operationId: "PostShop"
       requestBody:
@@ -126,13 +126,29 @@ paths:
     #店一覧取得
     get:
       tags:
-        - shopsearch
+        - shops
       summary: "店一覧取得"
       deprecated: false
       operationId: "GetAllShops"
       responses:
         "200":
           $ref: "#/components/responses/ShopsSearchResponse"
+  "/python/{userId}":
+    #店一覧取得
+    get:
+      tags:
+        - shops
+      summary: "おすすめの店一覧取得"
+      deprecated: false
+      operationId: "GetRecommendShops"
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type:integer }
+      responses:
+        "200":
+          $ref: "#/components/responses/ShopsResponse"
 
   "/user/{userId}":
     get:
@@ -610,9 +626,6 @@ tags:
 
   - name: shops
     description: "店情報"
-  
-  - name: shopsearch
-    description: "店検索情報"
 
   - name: user
     description: "ユーザ情報"
@@ -622,3 +635,4 @@ tags:
 
   - name: rating
     description: "店の評価"
+

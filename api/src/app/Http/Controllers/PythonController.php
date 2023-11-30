@@ -19,11 +19,18 @@ class PythonController extends Controller
         exec($command, $output);
 
         $json = json_decode($output[0]);
-
         return $json;
-        //return view('index', compact('output'));
-        //return $output[0];
     }
+
+    //おすすめ
+    public function show($userId)
+    {
+        $path = app_path() . "/python/sql.py";
+        $command = "python " . $path. " ". $userId;
+        exec($command, $output);
+        return($output[0]);
+    }
+
     public function store(PythonRequest $request)
     {
         $keyword = $request->keyword;
