@@ -37,7 +37,7 @@ const MyPage = () => {
     };
 
     fetchData();
-  }, []);
+  }, [auth]);
 
   //おすすめの店取得
   useEffect(() => {
@@ -57,9 +57,8 @@ const MyPage = () => {
         console.error(error);
       }
     };
-
     recommendData();
-  }, []);
+  }, [auth]);
   console.log(recommend_shops);
 
   if (!auth?.user) {

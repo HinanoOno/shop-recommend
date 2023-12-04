@@ -47,7 +47,7 @@ def recommend(userId):
         data = pd.DataFrame(result_array,columns=columns)
 
         df = pd.pivot_table(data,index='user_id', columns='shop_id', values='rating')
-        
+  
         nan_mask = df.isna()
         nan_cells = np.column_stack(np.where(nan_mask))
 
@@ -56,82 +56,80 @@ def recommend(userId):
 
         user_id2index = dict(zip(df.index, range(len(df.index)))) #key、valueが0始まりのindex
         shop_id2index = dict(zip(df.columns, range(len(df.columns))))
-        #R = df.values
+
         # 予測対象のユーザーID
-        test_users = df.index.unique() 
-        movie_rating_predict = nan_df.copy()
+        test_users = nan_df['user_id']
+        shop_rating_predict = nan_df.copy()
 
-        # 予測対象のユーザー(ユーザー1）に注目する
-        for user1_id in test_users:
-                        similar_users = [] #類似ユーザ
-                        similarities = [] #類似度
-                        avgs = [] #類似ユーザの平均評価値
+        for user1_id in test_users.unique():
+            similar_users = [] #類似ユーザ
+            similarities = [] #類似度
+            avgs = [] #類似ユーザの平均評価値
 
-                        # ユーザ−１と評価値行列中のその他のユーザー（ユーザー２）との類似度を算出する
-                        for user2_id in df.index:
-                            if user1_id == user2_id:
-                                continue
+            # ユーザ−１と評価値行列中のその他のユーザーとの類似度を算出する
+            for user2_id in df.index:
+                if user1_id == user2_id:
+                    continue
 
-                            # ユーザー１とユーザー２の評価値ベクトル
-                            u_1 = df.loc[user1_id, :].to_numpy() #ユーザ1の評価ベクトル
-                            u_2 = df.loc[user2_id, :].to_numpy()
+                # ユーザー１とユーザー２の評価値ベクトル
+                u_1 = df.loc[user1_id, :].to_numpy() #ユーザ1の評価ベクトル
+                u_2 = df.loc[user2_id, :].to_numpy()
 
-                            # `u_1` と `u_2` から、ともに欠損値でない要素のみ抜き出したベクトルを取得
-                            common_items = ~np.isnan(u_1) & ~np.isnan(u_2)
+                # `u_1` と `u_2` から、ともに欠損値でない要素のみ抜き出したベクトルを取得
+                common_items = ~np.isnan(u_1) & ~np.isnan(u_2)
 
-                            # 共通して評価したアイテムがない場合はスキップ
-                            if not common_items.any():
-                                continue
+                # 共通して評価したアイテムがない場合はスキップ
+                if not common_items.any():
+                    continue
 
-                            u_1, u_2 = u_1[common_items], u_2[common_items]
+                u_1, u_2 = u_1[common_items], u_2[common_items]
 
-                            # ピアソンの相関係数を使ってユーザー１とユーザー２の類似度を算出
-                            rho_12 = peason_coefficient(u_1, u_2)
+                # ユーザー１とユーザー２の類似度を算出
+                rho_12 = peason_coefficient(u_1, u_2)
 
-                            # ユーザー1との類似度が0より大きい場合、ユーザー2を類似ユーザーとみなす
-                            if rho_12 > 0:
-                                similar_users.append(user2_id)
-                                similarities.append(rho_12)
-                                avgs.append(np.mean(u_2))
-                        # ユーザー１の平均評価値
-                        avg_1 = np.mean(df.loc[user1_id, :].dropna().to_numpy())
+                # ユーザー1との類似度が0より大きい場合、ユーザー2を類似ユーザーとみなす
+                if rho_12 > 0:
+                    similar_users.append(user2_id)
+                    similarities.append(rho_12)
+                    avgs.append(np.mean(u_2))
+                # ユーザー１の平均評価値
+                avg_1 = np.mean(df.loc[user1_id, :].dropna().to_numpy())
                         
-                        if user1_id in(nan_df['user_id'].values):
-                                # 予測対象の映画のID
-                            test_movies = nan_df[nan_df["user_id"] == user1_id].shop_id.values
-                                # 予測できない映画への評価値はユーザー１の平均評価値とする
-                            nan_df.loc[(nan_df["user_id"] == user1_id), "rating"] = avg_1
+                if user1_id in test_users.unique():
+                    # 予測対象の店のID
+                    test_shops = nan_df[nan_df["user_id"] == user1_id].shop_id.values
+                    # 予測できない店への評価値はユーザー１の平均評価値とする
+                    nan_df.loc[(nan_df["user_id"] == user1_id), "rating"] = avg_1
 
-                                #類似ユーザがいるのならば
-                            if similar_users:
-                                    
-                                for movie_id in test_movies:
-                                    if movie_id in shop_id2index:
-                                        #類似ユーザの予測対象に対する評価
-                                        r_xy = df.loc[similar_users, movie_id].to_numpy()
-                                        #欠損値ではないか
-                                        rating_exists = ~np.isnan(r_xy)
+                    #類似ユーザがいるのならば
+                    if similar_users:
+                        for shop_id in test_shops:
+                            if shop_id in shop_id2index:
+                                #類似ユーザの予測対象に対する評価
+                                r_xy = df.loc[similar_users, shop_id].to_numpy()
+                                #欠損値ではないか
+                                rating_exists = ~np.isnan(r_xy)
 
-                                        # 類似ユーザーが対象となる映画への評価値を持っていない場合はスキップ
-                                        if not rating_exists.any():
-                                            continue
+                                # 類似ユーザーが対象となる店への評価値を持っていない場合はスキップ
+                                if not rating_exists.any():
+                                    continue
 
-                                        #評価が存在するところのみ抽出
-                                        r_xy = r_xy[rating_exists]
-                                        #類似度と平均評価の評価が存在するユーザのみ
-                                        rho_1x = np.array(similarities)[rating_exists]
-                                        avg_x = np.array(avgs)[rating_exists]
+                                #評価が存在するところのみ抽出
+                                r_xy = r_xy[rating_exists]
+                                #類似度と平均評価の評価が存在するユーザのみ
+                                rho_1x = np.array(similarities)[rating_exists]
+                                avg_x = np.array(avgs)[rating_exists]
 
-                                        #ユーザ1の評価値の予測
-                                        r_hat_1y = avg_1 + np.dot(rho_1x, (r_xy - avg_x)) / rho_1x.sum()
+                                #ユーザ1の評価値の予測
+                                r_hat_1y = avg_1 + np.dot(rho_1x, (r_xy - avg_x)) / rho_1x.sum()
 
-                                        # 予測評価値を格納
-                                        nan_df.loc[
-                                            (nan_df["user_id"] == user1_id)
-                                            & (nan_df["shop_id"] == movie_id),
-                                            "rating",
-                                        ] = r_hat_1y  
-        
+                                # 予測評価値を格納
+                                nan_df.loc[
+                                    (nan_df["user_id"] == user1_id)
+                                    & (nan_df["shop_id"] == shop_id),
+                                    "rating",
+                                ] = r_hat_1y  
+            
         #予測結果を入れたpivot_table
         merged_df = pd.concat([data, nan_df], ignore_index=True)
 
@@ -142,7 +140,6 @@ def recommend(userId):
         pred_user2items = defaultdict(list)
 
         for user_id in result.index:
-            #print(result.loc[user_id,:])
             movie_indexes = result.loc[user_id,:].sort_values(ascending=False).index
             for movie_id in movie_indexes:
                 pred_user2items[user_id].append(movie_id)
@@ -152,7 +149,6 @@ def recommend(userId):
         print(pred_user2items[userId])
 
     finally:
-        # 接続をクローズ
         connection.close()     
 
 if __name__ == "__main__":

@@ -28,7 +28,8 @@ class PythonController extends Controller
         $path = app_path() . "/python/sql.py";
         $command = "python " . $path. " ". $userId;
         exec($command, $output);
-        return($output[0]);
+        dd($output);
+        //return($output);
     }
 
     public function store(PythonRequest $request)
