@@ -18,6 +18,19 @@ class RatingSeeder extends Seeder
     {
         $users = User::factory(3)->create();
         $shops = Shop::factory(3)->create();
-        Rating::factory(10)->recycle($shops)->recycle($users)->create();
+
+        foreach ($users as $user) {
+            for ($i = 0; $i < 3; $i++) {
+                do {
+                    $shop = $shops->random();
+                } while (Rating::where('user_id', $user->id)->where('shop_id', $shop->id)->exists());
+
+                // ランダムな評価を生成
+                Rating::factory()->create([
+                    'user_id' => $user->id,
+                    'shop_id' => $shop->id,
+                ]);
+            }
+        }
     }
 }

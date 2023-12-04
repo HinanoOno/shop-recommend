@@ -21,9 +21,10 @@ class RatingFactory extends Factory
 
 
         return [
-            'user_id' => User::factory(), // Assuming there are 10 users
-            'shop_id' => Shop::factory(), // Assuming there are 10 shops
+            'user_id' => User::factory(),
+            'shop_id' => Shop::factory(), 
             'rating' =>  fake()->numberBetween(1, 5),
         ];
     }
+
 }
