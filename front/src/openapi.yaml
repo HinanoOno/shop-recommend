@@ -1,0 +1,647 @@
+openapi: "3.0.0"
+
+info:
+  title: "クイズapi"
+  description: "クイズサイト用のapiです"
+  version: "1.0.0"
+
+servers:
+  - url: "http://localhost/api/v1"
+    description: "ローカル環境"
+
+paths:
+  "/quizes":
+    get:
+      tags:
+        - quizes
+      summary: "クイズ一覧取得(user)"
+      deprecated: false
+      operationId: "GetAllQuizes"
+      responses:
+        "200":
+          $ref: "#/components/responses/QuizesResponse"
+  "/admin/quizes":
+    post:
+      tags:
+        - quizes
+      summary: "新規クイズ作成(admin)"
+      operationId: "CreateQuiz"
+      requestBody:
+        description: "一問クイズ作成"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Quiz"
+
+      responses:
+        "201":
+          $ref: "#/components/responses/QuizesResponse"
+        "400":
+          description: "Client side error"
+
+    get:
+      tags:
+        - quizes
+      summary: "クイズ一覧取得(admin)"
+      deprecated: false
+      operationId: "GetAllQuizesForAdmin"
+      responses:
+        "200":
+          $ref: "#/components/responses/QuizesResponse"
+
+  "/admin/quizes/{quizId}":
+    get:
+      tags:
+        - quizes
+      summary: "クイズ一問取得(admin)"
+      deprecated: false
+      operationId: "GetQuiz"
+      parameters:
+        - name: quizId
+          in: path
+          required: true
+          schema: { type:integer }
+      responses:
+        "200":
+          $ref: "#/components/responses/QuizResponse"
+
+    put:
+      tags:
+        - quizes
+      summary: "クイズ編集(admin)"
+      deprecated: false
+      operationId: "EditQuiz"
+      parameters:
+        - name: quizId
+          in: path
+          required: true
+          schema: { type:integer }
+      requestBody:
+        description: "クイズ内容"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Quiz"
+      responses:
+        "201":
+          $ref: "#/components/responses/QuizResponse"
+    delete:
+      tags:
+        - quizes
+      summary: "クイズ削除(admin)"
+      deprecated: false
+      operationId: "DeleteQuiz"
+      parameters:
+        - name: quizId
+          in: path
+          required: true
+          schema: { type:integer }
+      responses:
+        "204":
+          description: "No Content"
+
+  #店検索
+  "/python":
+    post:
+      tags:
+        - shops
+      summary: "店検索"
+      operationId: "PostShop"
+      requestBody:
+        description: "店内容"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Keyword"
+
+      responses:
+        "201":
+          $ref: "#/components/responses/ShopsSearchResponse"
+        "400":
+          description: "Client side error"
+
+    #店一覧取得
+    get:
+      tags:
+        - shops
+      summary: "店一覧取得"
+      deprecated: false
+      operationId: "GetAllShops"
+      responses:
+        "200":
+          $ref: "#/components/responses/ShopsSearchResponse"
+  "/python/{userId}":
+    #店一覧取得
+    get:
+      tags:
+        - shops
+      summary: "おすすめの店一覧取得"
+      deprecated: false
+      operationId: "GetRecommendShops"
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type:integer }
+      responses:
+        "200":
+          $ref: "#/components/responses/ShopsRecommendResponse"
+
+  "/user/{userId}":
+    get:
+      tags:
+        - user
+      summary: "ユーザ取得"
+      deprecated: false
+      operationId: "GetUser"
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type:integer }
+      responses:
+        "200":
+          $ref: "#/components/responses/UserResponse"
+
+  #いいね機能
+  "/shops/{shopId}/likes":
+    post:
+      tags:
+        - like
+      summary: "店をいいねする"
+      operationId: "LikeShop"
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/LikeResponse"
+  "/shops/{shopId}/likes/{likeId}":
+    delete:
+      tags:
+        - like
+      summary: "いいねを外す"
+      operationId: "DeleteLike"
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: likeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: "No content"
+
+  #店のデータを保存する
+  "/shop":
+    post:
+      tags:
+        - shops
+      summary: "店情報保存"
+      operationId: "PostShop"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopInput"
+      responses:
+        "201":
+          $ref: "#/components/responses/ShopResponse"
+        "400":
+          description: "Invalid request body or parameters"
+        "404":
+          description: "Shop not found"
+  "/shop/{shop_id}":
+    get:
+      tags:
+        - shops
+      summary: "店情報取得"
+      operationId: "getShopById"
+      parameters:
+        - name: shop_id
+          in: path
+          required: true
+          schema:
+            oneOf:
+              - type: string
+              - type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/ShopResponse"
+        "404":
+          description: "Shop not found"
+
+  #ユーザが評価した店のデータを取得
+  "/users/{user_id}/saved_shops":
+    get:
+      tags:
+        - rating
+      summary: "ユーザが評価した店データを取得"
+      operationId: "GetUserRating"
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/UserShopsRatingResponse"
+        "404":
+          description: "User not found"
+
+    # ユーザの店の評価を保存
+    post:
+      tags:
+        - rating
+      summary: "ユーザが評価した店データを保存"
+      operationId: "SaveUserRating"
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: integer
+                shop_id:
+                  type: integer
+                rating:
+                  type: integer
+              required:
+                - shop_id
+                - user_id
+                - rating
+            example:
+              shop_id: 123
+              user_id: 1
+              rating: 3
+      responses:
+        "201":
+          $ref: "#/components/responses/UserShopRatingResponse"
+        "404":
+          description: "User not found"
+
+  "/users/{user_id}/saved_shops/{shop_id}":
+    #userの保存した店を削除
+    delete:
+      tags:
+        - rating
+      summary: "ユーザの店の評価を削除"
+      operationId: "DeletUserRating"
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: shop_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: "No Content"
+        "404":
+          description: "User or shop not found"
+
+components:
+  responses:
+    QuizResponse:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Quiz"
+      description: "成功"
+    QuizesResponse:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/Quiz"
+      description: "成功"
+    ShopResponse:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Shop"
+      description: "成功"
+    ShopsResponse:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/Shop"
+      description: "成功"
+    ShopsSearchResponse:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/ShopSearch"
+      description: "成功"
+    ShopsRecommendResponse:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+                type: integer
+            example: [1, 2, 3]
+      description: '成功'
+    UserResponse:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/User"
+      description: "成功"
+    LikeResponse:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Like"
+      description: "成功"
+    UserShopRatingResponse:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/UserShopRating"
+      description: "成功"
+    UserShopsRatingResponse:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/UserShopsRating"
+      description: "成功"
+
+  schemas:
+    Quiz:
+      type: object
+      properties:
+        content:
+          type: string
+          example: "これは誰でしょう"
+        image:
+          type: string
+          example: "image.png"
+        supplement:
+          type: string
+          example: "1年前の写真です"
+        choices:
+          type: array
+          items:
+            $ref: "#/components/schemas/Choice"
+      required:
+        - content
+
+    #選択肢
+    Choice:
+      type: object
+      properties:
+        question_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "ひなのです"
+        valid:
+          type: boolean
+          example: true
+      required:
+        - question_id
+        - name
+        - valid
+
+    Keyword:
+      type: object
+      properties:
+        keyword:
+          type: string
+          example: "俺のフレンチ"
+      required:
+        - keyword
+    
+    #店情報保存用
+    ShopInput:
+      type: object
+      properties:
+        shop_id:
+          type: string
+          example: "JJ0000"
+        name:
+          type: string
+          example: "俺のフレンチ 東京"
+        address:
+          type: string
+          example: "東京都〇〇区"
+        logo_image:
+          type: string
+          example: "https://example.com/logo.png"
+        genre:
+          type: string
+          example: "French"
+        url:
+          type: string
+          example: "https://example.com/shop1"
+        photo:
+          type: object
+          properties:
+            l:
+              type: string
+              example: "https://example.com/photo_large.png"
+            m:
+              type: string
+              example: "https://example.com/photo_medium.png"
+            s:
+              type: string
+              example: "https://example.com/photo_small.png"
+      required:
+        - shop_id
+        - name
+
+    #検索結果表示用
+    ShopSearch:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "JJ0000"
+        name:
+          type: string
+          example: "俺のフレンチ 東京"
+        address:
+          type: string
+          example: "東京都〇〇区"
+        logo_image:
+          type: string
+          example: "https://example.com/logo.png"
+        genre:
+          type: string
+          example: "French"
+        url:
+          type: string
+          example: "https://example.com/shop1"
+        photo:
+          type: object
+          properties:
+            l:
+              type: string
+              example: "https://example.com/photo_large.png"
+            m:
+              type: string
+              example: "https://example.com/photo_medium.png"
+            s:
+              type: string
+              example: "https://example.com/photo_small.png"
+      required:
+        - id
+        - name
+
+    #shop_table用
+    Shop:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        shop_id:
+          type: string
+          example: "JJ0000"
+        name:
+          type: string
+          example: "俺のフレンチ 東京"
+        address:
+          type: string
+          example: "東京都〇〇区"
+        logo_image:
+          type: string
+          example: "https://example.com/logo.png"
+        genre:
+          type: string
+          example: "French"
+        url:
+          type: string
+          example: "https://example.com/shop1"
+        photo:
+          type: object
+          properties:
+            l:
+              type: string
+              example: "https://example.com/photo_large.png"
+            m:
+              type: string
+              example: "https://example.com/photo_medium.png"
+            s:
+              type: string
+              example: "https://example.com/photo_small.png"
+      required:
+        - id
+        - shop_id
+        - name
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "小野"
+        email:
+          type: string
+          format: email
+          example: "hi@gmail.com"
+        password:
+          type: string
+          format: password
+          example: "aaaaa"
+      required:
+        - id
+        - name
+        - email
+        - password
+
+    Like:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        userId:
+          type: integer
+          example: 1
+        shopId:
+          type: string
+          example: "JJ0000"
+      required:
+        - id
+        - userId
+        - shopId
+
+    UserShopRating:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        user_id:
+          type: integer
+          example: 1
+        shop_id:
+          type: integer
+          example: 1
+        rating:
+          type: integer
+          example: 1
+      required:
+        - id
+        - user_id
+        - shop_id
+        - rating
+
+    UserShopsRating:
+      type: array
+      items:
+        $ref: "#/components/schemas/UserShopRating"
+
+tags:
+  - name: quizes
+    description: "クイズ関連"
+
+  - name: shops
+    description: "店情報"
+
+  - name: user
+    description: "ユーザ情報"
+
+  - name: like
+    description: "いいね関連"
+
+  - name: rating
+    description: "店の評価"
+
