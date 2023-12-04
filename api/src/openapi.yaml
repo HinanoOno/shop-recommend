@@ -148,7 +148,7 @@ paths:
           schema: { type:integer }
       responses:
         "200":
-          $ref: "#/components/responses/ShopsResponse"
+          $ref: "#/components/responses/ShopsRecommendResponse"
 
   "/user/{userId}":
     get:
@@ -363,6 +363,13 @@ components:
             items:
               $ref: "#/components/schemas/ShopSearch"
       description: "成功"
+    ShopsRecommendResponse:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+                type: integer
     UserResponse:
       content:
         application/json:
