@@ -29,6 +29,11 @@ class PythonController extends Controller
         $command = "python " . $path. " ". $userId;
         exec($command, $output);
         dd($output);
+        /*foreach ($output as $user_id => $shop_ids) {
+            print($shop_ids);
+           
+        }*/
+
         //return($output);
     }
 

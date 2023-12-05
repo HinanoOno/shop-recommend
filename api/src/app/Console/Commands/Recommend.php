@@ -25,6 +25,6 @@ class Recommend extends Command
      */
     public function handle()
     {
-        logger('test');
+        #logger('test');
     }
 }

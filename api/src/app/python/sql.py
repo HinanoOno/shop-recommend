@@ -35,6 +35,13 @@ def recommend(userId):
 
         cursor.execute("USE website")
 
+        #recommendationsの全データを削除
+        truncate_sql = "TRUNCATE TABLE recommendations"
+        cursor.execute(truncate_sql)
+
+        connection.commit()
+
+
         query = "SELECT user_id ,shop_id ,rating FROM ratings"
         cursor.execute(query)
 
@@ -136,17 +143,30 @@ def recommend(userId):
         # 結合後のデータを pivot_table に変換する
         result = pd.pivot_table(merged_df, index='user_id', columns='shop_id', values='rating')
 
-        # キーはユーザーIDで、バリューはおすすめのアイテムIDのリスト
-        pred_user2items = defaultdict(list)
+        pred_user2items = {}
 
         for user_id in result.index:
-            movie_indexes = result.loc[user_id,:].sort_values(ascending=False).index
+            pred_user2items[user_id] = [] 
+            movie_indexes = result.loc[user_id, :].sort_values(ascending=False).index
             for movie_id in movie_indexes:
                 pred_user2items[user_id].append(movie_id)
-                #各ユーザにおけるベスト3
+                # 各ユーザにおけるベスト3
                 if len(pred_user2items[user_id]) == 3:
                     break
-        print(pred_user2items[userId])
+        
+        #データベースに挿入
+        for user_id, recommended_shops in pred_user2items.items():
+            for shop_id in recommended_shops:
+                sql = "INSERT INTO recommendations (user_id, shop_id) VALUES (%s, %s)"
+                val = (user_id, shop_id)
+                cursor.execute(sql, val)
+
+        connection.commit()
+
+        print(pred_user2items)
+    except Exception as e:
+        print(f"Error: {e}")
+
 
     finally:
         connection.close()     
