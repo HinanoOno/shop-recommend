@@ -29,7 +29,6 @@ class PythonController extends Controller
         $command = "python " . $path;
 
         exec($command, $output, $returnCode);
-        #dd($returnCode,$output);
         return($output);
     }
 
