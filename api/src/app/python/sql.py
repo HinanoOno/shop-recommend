@@ -107,18 +107,28 @@ def predict_ratings(test_users,df,nan_df,shop_id2index,data):
     result = pd.pivot_table(merged_df, index='user_id', columns='shop_id', values='rating')
     return result
 
+def recommend(result,pred_user2items):
+    for user_id in result.index:
+        pred_user2items[user_id] = [] 
+        movie_indexes = result.loc[user_id, :].sort_values(ascending=False).index
+        for movie_id in movie_indexes:
+            pred_user2items[user_id].append(movie_id)
+
+            if len(pred_user2items[user_id]) == 3:
+                break
+
 def insert_recommend_shops_data(connection,cursor,pred_user2items):
     for user_id, recommended_shops in pred_user2items.items():
-            for shop_id in recommended_shops:
-                sql = "INSERT INTO recommendations (user_id, shop_id) VALUES (%s, %s)"
-                val = (user_id, shop_id)
-                cursor.execute(sql, val)
+        for shop_id in recommended_shops:
+            sql = "INSERT INTO recommendations (user_id, shop_id) VALUES (%s, %s)"
+            val = (user_id, shop_id)
+            cursor.execute(sql, val)
 
     connection.commit()
 
 nan_df = None
 
-def recommend():
+def main():
     try:
         connection,cursor = connect_to_db(config)
 
@@ -144,16 +154,9 @@ def recommend():
         result = predict_ratings(test_users,df,nan_df,shop_id2index,data)
 
         pred_user2items = {}
-
-        for user_id in result.index:
-            pred_user2items[user_id] = [] 
-            movie_indexes = result.loc[user_id, :].sort_values(ascending=False).index
-            for movie_id in movie_indexes:
-                pred_user2items[user_id].append(movie_id)
-
-                if len(pred_user2items[user_id]) == 3:
-                    break
-                    
+        
+        recommend(result,pred_user2items)
+    
         insert_recommend_shops_data(connection,cursor,pred_user2items)
 
 
@@ -162,11 +165,12 @@ def recommend():
 
 
     finally:
-        connection.close()     
+        connection.close()    
+ 
 
 if __name__ == "__main__":
     userId = int(sys.argv[1]) if len(sys.argv) > 1 else 1
-    recommend()
+    main()
 
                     
         
