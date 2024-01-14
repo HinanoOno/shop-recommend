@@ -19,7 +19,7 @@ class PythonController extends Controller
         exec($command, $output);
 
         $json = json_decode($output[0]);
-        return $json;
+        return $output;
     }
 
     //おすすめ
@@ -29,8 +29,8 @@ class PythonController extends Controller
         $command = "python " . $path;
 
         exec($command, $output, $returnCode);
-        #dd($returnCode,$output);
-        return($output);
+        return ($output);
+        //return($output);
     }
 
     public function store(PythonRequest $request)
