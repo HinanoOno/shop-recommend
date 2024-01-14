@@ -25,6 +25,9 @@ class Recommend extends Command
      */
     public function handle()
     {
-        #logger('test');
+        $path = app_path() . "/python/sql.py";
+        $command = "python " . $path;
+
+        exec($command, $output, $returnCode);
     }
 }

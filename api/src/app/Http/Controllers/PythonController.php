@@ -26,15 +26,11 @@ class PythonController extends Controller
     public function show($userId)
     {
         $path = app_path() . "/python/sql.py";
-        $command = "python " . $path. " ". $userId;
-        exec($command, $output);
-        dd($output);
-        /*foreach ($output as $user_id => $shop_ids) {
-            print($shop_ids);
-           
-        }*/
+        $command = "python " . $path;
 
-        //return($output);
+        exec($command, $output, $returnCode);
+        #dd($returnCode,$output);
+        return($output);
     }
 
     public function store(PythonRequest $request)

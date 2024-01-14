@@ -5,15 +5,15 @@ services:
     build: ./docker/php
     volumes:
       - ./src:/work/web
-  cron:
-    build:
-      context: ./
-      dockerfile: ./docker/cron/Dockerfile
-    tty: true
-    volumes:
-      - ./src:/work/web
-    depends_on:
-      - app
+  #cron:
+    #build:
+      #context: ./
+      #dockerfile: ./docker/cron/Dockerfile
+    #tty: true
+    #volumes:
+      #- ./src:/work/web
+    #depends_on:
+      #- app
 
   # appやwebにnode.jsをインストールするのは単一責任の原則に反するので、別のコンテナにする
   node:

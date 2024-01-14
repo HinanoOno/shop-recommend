@@ -29,7 +29,7 @@ def peason_coefficient(u,v):
             return numerator / denominator
 nan_df = None
 
-def recommend(userId):
+def recommend():
     try:
         cursor = connection.cursor()
 
@@ -48,7 +48,7 @@ def recommend(userId):
         result = cursor.fetchall()
     
         result_array = np.array([(row[0], row[1], row[2]) for row in result])
-        
+
         columns = ['user_id','shop_id','rating']
 
         data = pd.DataFrame(result_array,columns=columns)
@@ -91,6 +91,7 @@ def recommend(userId):
 
                 u_1, u_2 = u_1[common_items], u_2[common_items]
 
+
                 # ユーザー１とユーザー２の類似度を算出
                 rho_12 = peason_coefficient(u_1, u_2)
 
@@ -99,6 +100,7 @@ def recommend(userId):
                     similar_users.append(user2_id)
                     similarities.append(rho_12)
                     avgs.append(np.mean(u_2))
+                
                 # ユーザー１の平均評価値
                 avg_1 = np.mean(df.loc[user1_id, :].dropna().to_numpy())
                         
@@ -114,8 +116,9 @@ def recommend(userId):
                             if shop_id in shop_id2index:
                                 #類似ユーザの予測対象に対する評価
                                 r_xy = df.loc[similar_users, shop_id].to_numpy()
+
                                 #欠損値ではないか
-                                rating_exists = ~np.isnan(r_xy)
+                                rating_exists = ~np.isnan(r_xy) 
 
                                 # 類似ユーザーが対象となる店への評価値を持っていない場合はスキップ
                                 if not rating_exists.any():
@@ -123,6 +126,7 @@ def recommend(userId):
 
                                 #評価が存在するところのみ抽出
                                 r_xy = r_xy[rating_exists]
+
                                 #類似度と平均評価の評価が存在するユーザのみ
                                 rho_1x = np.array(similarities)[rating_exists]
                                 avg_x = np.array(avgs)[rating_exists]
@@ -135,7 +139,7 @@ def recommend(userId):
                                     (nan_df["user_id"] == user1_id)
                                     & (nan_df["shop_id"] == shop_id),
                                     "rating",
-                                ] = r_hat_1y  
+                                ] = r_hat_1y 
             
         #予測結果を入れたpivot_table
         merged_df = pd.concat([data, nan_df], ignore_index=True)
@@ -145,6 +149,7 @@ def recommend(userId):
 
         pred_user2items = {}
 
+        #movie_idの名前を変える
         for user_id in result.index:
             pred_user2items[user_id] = [] 
             movie_indexes = result.loc[user_id, :].sort_values(ascending=False).index
@@ -153,7 +158,6 @@ def recommend(userId):
                 # 各ユーザにおけるベスト3
                 if len(pred_user2items[user_id]) == 3:
                     break
-        
         #データベースに挿入
         for user_id, recommended_shops in pred_user2items.items():
             for shop_id in recommended_shops:
@@ -163,7 +167,6 @@ def recommend(userId):
 
         connection.commit()
 
-        print(pred_user2items)
     except Exception as e:
         print(f"Error: {e}")
 
@@ -173,7 +176,7 @@ def recommend(userId):
 
 if __name__ == "__main__":
     userId = int(sys.argv[1]) if len(sys.argv) > 1 else 1
-    recommend(userId)
+    recommend()
 
                     
         
