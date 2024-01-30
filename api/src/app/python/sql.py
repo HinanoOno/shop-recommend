@@ -7,6 +7,15 @@ from collections import defaultdict
 from db_connector import connect_to_db
 from ratings_data_loader import load_ratings_data
 
+def create_ratings_df(ratings_data):
+    ratings_data_array = np.array(
+            [(row[0], row[1], row[2]) for row in ratings_data]
+        )
+
+    columns = ["user_id", "shop_id", "rating"]
+    ratings_df = pd.DataFrame(ratings_data_array, columns=columns)
+    
+    return ratings_df
 
 def create_not_rated_df(ratings_table):
     nan_mask = ratings_table.isna()
@@ -221,12 +230,7 @@ def recommend(user_id):
 
         ratings_data = load_ratings_data(cursor, connection)
 
-        ratings_data_array = np.array(
-            [(row[0], row[1], row[2]) for row in ratings_data]
-        )
-
-        columns = ["user_id", "shop_id", "rating"]
-        ratings_df = pd.DataFrame(ratings_data_array, columns=columns)
+        ratings_df = create_ratings_df(ratings_data)
 
         ratings_table = pd.pivot_table(
             ratings_df, index="user_id", columns="shop_id", values="rating"
