@@ -2,6 +2,7 @@
 
 //namespace App\Http\Controllers\Api\V1;
 namespace App\Http\Controllers;
+
 use Illuminate\Http\Request;
 use App\Http\Requests\PythonRequest;
 
@@ -15,7 +16,7 @@ class PythonController extends Controller
     public function index()
     {
         $path = app_path() . "/python/main.py";
-        $command = "python " . $path. " ". "俺のフレンチ";
+        $command = "python " . $path . " " . "俺のフレンチ";
         exec($command, $output);
 
         $json = json_decode($output[0]);
@@ -26,21 +27,21 @@ class PythonController extends Controller
     public function show($userId)
     {
         $path = app_path() . "/python/sql.py";
-        $command = "python " . $path;
+        $command = "python " . $path. " " . $userId;
 
         exec($command, $output, $returnCode);
-        return($output);
+        return ($output[0]);
     }
 
     public function store(PythonRequest $request)
     {
         $keyword = $request->keyword;
-        
+
         $path = app_path() . "/python/main.py";
-        $command = "python " . $path. " ". $keyword;
+        $command = "python " . $path . " " . $keyword;
         exec($command, $output);
 
-        $json = json_decode($output[0]);
+        $json = json_decode($output);
 
         return $json;
 
