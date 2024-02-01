@@ -30,6 +30,15 @@ def transform_ratings_df_to_table(ratings_df):
     )
 
 
+def transform_ratings_table_to_dataframe(pivot_table):
+    return pd.melt(
+        pivot_table.reset_index(),
+        id_vars="user_id",
+        var_name="shop_id",
+        value_name="rating",
+    ).dropna()
+
+
 def create_not_rated_df(ratings_table):
     nan_mask = ratings_table.isna()
     nan_cells = np.column_stack(np.where(nan_mask))
@@ -50,7 +59,7 @@ def load_data(cursor):
 
         ratings_table = transform_ratings_df_to_table(ratings_df)
 
-        return ratings_table, ratings_df
+        return ratings_table
 
     except Exception as e:
         print(f"Error: {e}")
@@ -127,7 +136,7 @@ def caluculate_rating(
 
 def predict_rating(
     recommendee,
-    ratings_df,
+    ratings_table,
     similar_users,
     similarities,
     candidate_avg_ratings,
@@ -135,7 +144,7 @@ def predict_rating(
     shop_id,
     not_rated_df,
 ):
-    similar_users_ratings = ratings_df.loc[similar_users, shop_id].to_numpy()
+    similar_users_ratings = ratings_table.loc[similar_users, shop_id].to_numpy()
     not_nan_similar_users_ratings = ~np.isnan(similar_users_ratings)
 
     if not not_nan_similar_users_ratings.any():
@@ -162,7 +171,7 @@ def predict_rating(
 
 
 def create_predict_ratings_table(
-    recommendees, ratings_table, not_rated_df, shop_id_index, ratings_df
+    recommendees, ratings_table, not_rated_df, shop_id_index
 ):
     for recommendee in recommendees.unique():
         similar_users = []
@@ -171,14 +180,14 @@ def create_predict_ratings_table(
 
         similar_users, similarities, candidate_avg_ratings = search_similar_users(
             recommendee,
-            ratings_df,
+            ratings_table,
             similar_users,
             similarities,
             candidate_avg_ratings,
         )
 
         recommendee_avg_rating = np.mean(
-            ratings_df.loc[recommendee, :].dropna().to_numpy()
+            ratings_table.loc[recommendee, :].dropna().to_numpy()
         )
 
         predict_ratings_shops = not_rated_df[
@@ -197,7 +206,7 @@ def create_predict_ratings_table(
                 return
             predict_rating(
                 recommendee,
-                ratings_df,
+                ratings_table,
                 similar_users,
                 similarities,
                 candidate_avg_ratings,
@@ -206,7 +215,9 @@ def create_predict_ratings_table(
                 not_rated_df,
             )
 
-    merged_ratings_df = pd.concat([ratings_table, not_rated_df], ignore_index=True)
+    ratings_df = transform_ratings_table_to_dataframe(ratings_table)
+
+    merged_ratings_df = pd.concat([ratings_df, not_rated_df], ignore_index=True)
 
     predict_ratings_table = pd.pivot_table(
         merged_ratings_df, index="user_id", columns="shop_id", values="rating"
@@ -255,7 +266,7 @@ def recommend(user_id):
     try:
         connection, cursor = connect_to_db()
 
-        ratings_df, ratings_table = load_data(cursor)
+        ratings_table = load_data(cursor)
 
         not_rated_df = create_not_rated_df(ratings_table)
 
@@ -270,7 +281,6 @@ def recommend(user_id):
             ratings_table,
             not_rated_df,
             shop_id_index,
-            ratings_df,
         )
 
         selected_recommend_shops = {}
