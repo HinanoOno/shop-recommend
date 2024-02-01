@@ -50,6 +50,7 @@ def create_unrated_df(ratings_table):
     ]
 
     unrated_df = pd.DataFrame(unrated_user_shop_pairs, columns=["user_id", "shop_id"])
+
     return unrated_df
 
 
@@ -172,53 +173,45 @@ def predict_rating(
     ] = predict_rating
 
 
-def create_predict_ratings_table(ratings_table):
+def create_predict_ratings_table(ratings_table, recommendee):
     unrated_df = create_unrated_df(ratings_table)
-    recommendees = unrated_df["user_id"]
 
     shop_id_index = dict(zip(ratings_table.columns, range(len(ratings_table.columns))))
 
-    for recommendee in recommendees.unique():
-        similar_users = []
-        similarities = []
-        candidate_avg_ratings = []
+    similar_users = []
+    similarities = []
+    candidate_avg_ratings = []
+    similar_users, similarities, candidate_avg_ratings = search_similar_users(
+        recommendee,
+        ratings_table,
+        similar_users,
+        similarities,
+        candidate_avg_ratings,
+    )
 
-        similar_users, similarities, candidate_avg_ratings = search_similar_users(
-            recommendee,
+    recommendee_avg_rating = np.mean(ratings_table.loc[recommendee, :].dropna().to_numpy())
+
+    predict_ratings_shops = unrated_df[unrated_df["user_id"] == recommendee].shop_id.values
+
+    unrated_df.loc[
+        (unrated_df["user_id"] == recommendee), "rating"
+    ] = recommendee_avg_rating
+
+    #if not similar_users:
+    #    return
+    for shop_id in predict_ratings_shops:
+        if shop_id not in shop_id_index:
+            return
+        predict_rating(
+            user_id,
             ratings_table,
             similar_users,
             similarities,
             candidate_avg_ratings,
+            recommendee_avg_rating,
+            shop_id,
+            unrated_df,
         )
-
-        recommendee_avg_rating = np.mean(
-            ratings_table.loc[recommendee, :].dropna().to_numpy()
-        )
-
-        predict_ratings_shops = unrated_df[
-            unrated_df["user_id"] == recommendee
-        ].shop_id.values
-
-        unrated_df.loc[
-            (unrated_df["user_id"] == recommendee), "rating"
-        ] = recommendee_avg_rating
-
-        if not similar_users:
-            continue
-
-        for shop_id in predict_ratings_shops:
-            if shop_id not in shop_id_index:
-                return
-            predict_rating(
-                recommendee,
-                ratings_table,
-                similar_users,
-                similarities,
-                candidate_avg_ratings,
-                recommendee_avg_rating,
-                shop_id,
-                unrated_df,
-            )
 
     ratings_df = transform_ratings_table_to_dataframe(ratings_table)
 
@@ -248,7 +241,7 @@ def select_top_n_recommend_shops(predict_ratings_table, user_id, n):
 
 
 def caluculate_recommendations(ratings_table, user_id):
-    predict_ratings_table = create_predict_ratings_table(ratings_table)
+    predict_ratings_table = create_predict_ratings_table(ratings_table, user_id)
 
     recommend_shops = select_top_n_recommend_shops(predict_ratings_table, user_id, 3)
 
