@@ -39,16 +39,18 @@ def transform_ratings_table_to_dataframe(pivot_table):
     ).dropna()
 
 
-def create_not_rated_df(ratings_table):
-    nan_mask = ratings_table.isna()
-    nan_cells = np.column_stack(np.where(nan_mask))
+def create_unrated_df(ratings_table):
+    unrated_mask = ratings_table.isna()
 
-    not_rated_df = [
+    unrated_table_position = np.column_stack(np.where(unrated_mask))
+
+    unrated_user_shop_pairs = [
         (ratings_table.index[row], ratings_table.columns[column])
-        for row, column in nan_cells
+        for row, column in unrated_table_position
     ]
-    not_rated_df = pd.DataFrame(not_rated_df, columns=["user_id", "shop_id"])
-    return not_rated_df
+
+    unrated_df = pd.DataFrame(unrated_user_shop_pairs, columns=["user_id", "shop_id"])
+    return unrated_df
 
 
 def load_data(cursor):
@@ -170,9 +172,12 @@ def predict_rating(
     ] = predict_rating
 
 
-def create_predict_ratings_table(
-    recommendees, ratings_table, not_rated_df, shop_id_index
-):
+def create_predict_ratings_table(ratings_table):
+    unrated_df = create_unrated_df(ratings_table)
+    recommendees = unrated_df["user_id"]
+
+    shop_id_index = dict(zip(ratings_table.columns, range(len(ratings_table.columns))))
+
     for recommendee in recommendees.unique():
         similar_users = []
         similarities = []
@@ -190,12 +195,12 @@ def create_predict_ratings_table(
             ratings_table.loc[recommendee, :].dropna().to_numpy()
         )
 
-        predict_ratings_shops = not_rated_df[
-            not_rated_df["user_id"] == recommendee
+        predict_ratings_shops = unrated_df[
+            unrated_df["user_id"] == recommendee
         ].shop_id.values
 
-        not_rated_df.loc[
-            (not_rated_df["user_id"] == recommendee), "rating"
+        unrated_df.loc[
+            (unrated_df["user_id"] == recommendee), "rating"
         ] = recommendee_avg_rating
 
         if not similar_users:
@@ -212,12 +217,12 @@ def create_predict_ratings_table(
                 candidate_avg_ratings,
                 recommendee_avg_rating,
                 shop_id,
-                not_rated_df,
+                unrated_df,
             )
 
     ratings_df = transform_ratings_table_to_dataframe(ratings_table)
 
-    merged_ratings_df = pd.concat([ratings_df, not_rated_df], ignore_index=True)
+    merged_ratings_df = pd.concat([ratings_df, unrated_df], ignore_index=True)
 
     predict_ratings_table = pd.pivot_table(
         merged_ratings_df, index="user_id", columns="shop_id", values="rating"
@@ -268,20 +273,7 @@ def recommend(user_id):
 
         ratings_table = load_data(cursor)
 
-        not_rated_df = create_not_rated_df(ratings_table)
-
-        shop_id_index = dict(
-            zip(ratings_table.columns, range(len(ratings_table.columns)))
-        )
-
-        recommendee = not_rated_df["user_id"]
-
-        predict_ratings_table = create_predict_ratings_table(
-            recommendee,
-            ratings_table,
-            not_rated_df,
-            shop_id_index,
-        )
+        predict_ratings_table = create_predict_ratings_table(ratings_table)
 
         selected_recommend_shops = {}
 
