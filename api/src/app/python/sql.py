@@ -7,15 +7,28 @@ from collections import defaultdict
 from db_connector import connect_to_db
 from ratings_data_loader import load_ratings_data
 
-def create_ratings_df(ratings_data):
-    ratings_data_array = np.array(
-            [(row[0], row[1], row[2]) for row in ratings_data]
-        )
 
+def fetch_ratings_data(cursor):
+    query = "SELECT user_id ,shop_id ,rating FROM ratings"
+    cursor.execute(query)
+    data = cursor.fetchall()
+
+    return data
+
+
+def convert_ratings_data_to_dataframe(ratings_data):
+    data_array = np.array([(row[0], row[1], row[2]) for row in ratings_data])
     columns = ["user_id", "shop_id", "rating"]
-    ratings_df = pd.DataFrame(ratings_data_array, columns=columns)
-    
-    return ratings_df
+    df = pd.DataFrame(data_array, columns=columns)
+
+    return df
+
+
+def transform_ratings_df_to_table(ratings_df):
+    return pd.pivot_table(
+        ratings_df, index="user_id", columns="shop_id", values="rating"
+    )
+
 
 def create_not_rated_df(ratings_table):
     nan_mask = ratings_table.isna()
@@ -27,6 +40,20 @@ def create_not_rated_df(ratings_table):
     ]
     not_rated_df = pd.DataFrame(not_rated_df, columns=["user_id", "shop_id"])
     return not_rated_df
+
+
+def load_data(cursor):
+    try:
+        ratings_data = fetch_ratings_data(cursor)
+
+        ratings_df = convert_ratings_data_to_dataframe(ratings_data)
+
+        ratings_table = transform_ratings_df_to_table(ratings_df)
+
+        return ratings_table, ratings_df
+
+    except Exception as e:
+        print(f"Error: {e}")
 
 
 def pearson_correlation_coefficent(u, v):
@@ -135,7 +162,7 @@ def predict_rating(
 
 
 def create_predict_ratings_table(
-    recommendees, ratings_df, not_rated_df, shop_id_index, ratings_data
+    recommendees, ratings_table, not_rated_df, shop_id_index, ratings_df
 ):
     for recommendee in recommendees.unique():
         similar_users = []
@@ -179,7 +206,7 @@ def create_predict_ratings_table(
                 not_rated_df,
             )
 
-    merged_ratings_df = pd.concat([ratings_data, not_rated_df], ignore_index=True)
+    merged_ratings_df = pd.concat([ratings_table, not_rated_df], ignore_index=True)
 
     predict_ratings_table = pd.pivot_table(
         merged_ratings_df, index="user_id", columns="shop_id", values="rating"
@@ -228,13 +255,7 @@ def recommend(user_id):
     try:
         connection, cursor = connect_to_db()
 
-        ratings_data = load_ratings_data(cursor, connection)
-
-        ratings_df = create_ratings_df(ratings_data)
-
-        ratings_table = pd.pivot_table(
-            ratings_df, index="user_id", columns="shop_id", values="rating"
-        )
+        ratings_df, ratings_table = load_data(cursor)
 
         not_rated_df = create_not_rated_df(ratings_table)
 

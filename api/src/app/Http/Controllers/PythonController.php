@@ -27,10 +27,10 @@ class PythonController extends Controller
     public function show($userId)
     {
         $path = app_path() . "/python/sql.py";
-        $command = "python " . $path. " " . $userId;
+        $command = "python " . $path . " " . $userId;
 
         exec($command, $output, $returnCode);
-        return ($output[0]);
+        return ($output);
     }
 
     public function store(PythonRequest $request)
@@ -41,12 +41,8 @@ class PythonController extends Controller
         $command = "python " . $path . " " . $keyword;
         exec($command, $output);
 
-        $json = json_decode($output);
+        $json = json_decode($output[0]);
 
         return $json;
-
-
-        // ここで必要なレスポンスを返す
-        #return response()->json(['result' => $result]);
     }
 }
