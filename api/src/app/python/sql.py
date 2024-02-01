@@ -231,41 +231,49 @@ def create_predict_ratings_table(ratings_table):
     return predict_ratings_table
 
 
-def select_top_n_recommend_shops(predict_ratings_table,user_id,n):
+def select_top_n_recommend_shops(predict_ratings_table, user_id, n):
     recommend_shops = []
-    
+
     desc_rating_shop_ids = (
         predict_ratings_table.loc[user_id, :].sort_values(ascending=False).index
     )
-    
+
     for shop_id in desc_rating_shop_ids:
         recommend_shops.append(shop_id)
 
         if len(recommend_shops) == n:
-                break
-            
+            break
+
     return recommend_shops
+
 
 def caluculate_recommendations(ratings_table, user_id):
-    
     predict_ratings_table = create_predict_ratings_table(ratings_table)
-    
-    recommend_shops = select_top_n_recommend_shops(predict_ratings_table,user_id,3)
-    
+
+    recommend_shops = select_top_n_recommend_shops(predict_ratings_table, user_id, 3)
+
     return recommend_shops
 
 
-def insert_recommend_shops_data(connection, cursor, user_id,recommend_shops):
-    truncate_sql = "TRUNCATE TABLE recommendations"
-    cursor.execute(truncate_sql)
+def delete_recommendations_from_db(connection, cursor, user_id):
+    sql = "DELETE FROM recommendations WHERE user_id = %s"
+    val = (user_id,)
+    cursor.execute(sql, val)
     connection.commit()
 
-    for shop_id in recommend_shops:
-        sql = "INSERT INTO recommendations (user_id, shop_id) VALUES (%s, %s)"
-        val = (user_id, shop_id)
-        cursor.execute(sql, val)
 
-    connection.commit()
+def insert_recommendations_to_db(connection, cursor, user_id, recommend_shops):
+    try:
+        delete_recommendations_from_db(connection, cursor, user_id)
+        for shop_id in recommend_shops:
+            sql = "INSERT INTO recommendations (user_id, shop_id) VALUES (%s, %s)"
+            val = (user_id, shop_id)
+            cursor.execute(sql, val)
+        connection.commit()
+
+    except Exception as e:
+        print(f"Error: {e}")
+
 
 def recommend(user_id):
     try:
@@ -273,9 +281,9 @@ def recommend(user_id):
 
         ratings_table = load_data(cursor)
 
-        recommend_shops = caluculate_recommendations(ratings_table,user_id)
+        recommend_shops = caluculate_recommendations(ratings_table, user_id)
 
-        insert_recommend_shops_data(connection, cursor, user_id, recommend_shops)
+        insert_recommendations_to_db(connection, cursor, user_id, recommend_shops)
 
         print(recommend_shops)
 
