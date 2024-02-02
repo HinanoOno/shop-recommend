@@ -64,12 +64,21 @@ def pearson_correlation_coefficent(u, v):
     return numerator / denominator
 
 
+def find_rated_shops(recommendee, ratings_table, candidate):
+    return (
+        ratings_table.loc[recommendee, :].to_numpy(),
+        ratings_table.loc[candidate, :].to_numpy(),
+    )
+
+
 def find_common_shops_ids(recommendee_rated_shops, candidate_rated_shops):
     return ~np.isnan(recommendee_rated_shops) & ~np.isnan(candidate_rated_shops)
 
+
 def find_common_shops(recommendee, ratings_table, candidate):
-    recommendee_rated_shops = ratings_table.loc[recommendee, :].to_numpy()
-    candidate_rated_shops = ratings_table.loc[candidate, :].to_numpy()
+    recommendee_rated_shops, candidate_rated_shops = find_rated_shops(
+        recommendee, ratings_table, candidate
+    )
 
     common_shops_ids = find_common_shops_ids(
         recommendee_rated_shops, candidate_rated_shops
