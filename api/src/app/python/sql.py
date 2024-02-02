@@ -92,9 +92,11 @@ def search_common_shops(recommendee, ratings_df, candidate):
     return common_shops, recommendee_rated_common_shops, candidate_rated_common_shops
 
 
-def search_similar_users(
-    recommendee, ratings_df, similar_users, similarities, candidate_avg_ratings
-):
+def find_similar_users(recommendee, ratings_df):
+    similar_users = []
+    similarities = []
+    candidate_avg_ratings = []
+
     for candidate in ratings_df.index:
         if recommendee == candidate:
             continue
@@ -120,7 +122,7 @@ def search_similar_users(
     return similar_users, similarities, candidate_avg_ratings
 
 
-def caluculate_rating(
+def calculate_rating(
     recommendee_avg_rating,
     similar_users_similarities,
     similar_users_ratings,
@@ -139,13 +141,12 @@ def caluculate_rating(
 
 def predict_rating(
     recommendee,
-    ratings_table,
+    shop_id,
     similar_users,
+    ratings_table,
+    recommendee_avg_rating,
     similarities,
     candidate_avg_ratings,
-    recommendee_avg_rating,
-    shop_id,
-    not_rated_df,
 ):
     similar_users_ratings = ratings_table.loc[similar_users, shop_id].to_numpy()
     not_nan_similar_users_ratings = ~np.isnan(similar_users_ratings)
@@ -160,92 +161,45 @@ def predict_rating(
         not_nan_similar_users_ratings
     ]
 
-    predict_rating = caluculate_rating(
+    predict_rating = calculate_rating(
         recommendee_avg_rating,
         similar_users_similarities,
         similar_users_ratings,
         similar_users_avg_ratings,
     )
 
-    not_rated_df.loc[
-        (not_rated_df["user_id"] == recommendee) & (not_rated_df["shop_id"] == shop_id),
-        "rating",
-    ] = predict_rating
+    return predict_rating
 
 
-def create_predict_ratings_table(ratings_table, recommendee):
-    unrated_df = create_unrated_df(ratings_table)
+def sort_key(item):
+    return item[1] if item[1] is not None else float("-inf")
 
-    shop_id_index = dict(zip(ratings_table.columns, range(len(ratings_table.columns))))
 
-    similar_users = []
-    similarities = []
-    candidate_avg_ratings = []
-    similar_users, similarities, candidate_avg_ratings = search_similar_users(
-        recommendee,
-        ratings_table,
-        similar_users,
-        similarities,
-        candidate_avg_ratings,
+def calculate_recommendations(ratings_table, user_id):
+    similar_users, similarities, candidate_avg_ratings = find_similar_users(
+        user_id, ratings_table
     )
 
-    recommendee_avg_rating = np.mean(ratings_table.loc[recommendee, :].dropna().to_numpy())
+    user_avg_rating = ratings_table.loc[user_id, :].mean()
 
-    predict_ratings_shops = unrated_df[unrated_df["user_id"] == recommendee].shop_id.values
+    predicted_ratings = {}
 
-    unrated_df.loc[
-        (unrated_df["user_id"] == recommendee), "rating"
-    ] = recommendee_avg_rating
-
-    #if not similar_users:
-    #    return
-    for shop_id in predict_ratings_shops:
-        if shop_id not in shop_id_index:
-            return
-        predict_rating(
+    for shop_id in ratings_table.columns:
+        predicted_ratings[shop_id] = predict_rating(
             user_id,
-            ratings_table,
+            shop_id,
             similar_users,
+            ratings_table,
+            user_avg_rating,
             similarities,
             candidate_avg_ratings,
-            recommendee_avg_rating,
-            shop_id,
-            unrated_df,
         )
 
-    ratings_df = transform_ratings_table_to_dataframe(ratings_table)
+    desc_sorted_ratings = sorted(predicted_ratings.items(), key=sort_key, reverse=True)
 
-    merged_ratings_df = pd.concat([ratings_df, unrated_df], ignore_index=True)
+    recommended_shops = [shop_id for shop_id, _ in desc_sorted_ratings[:3]]
 
-    predict_ratings_table = pd.pivot_table(
-        merged_ratings_df, index="user_id", columns="shop_id", values="rating"
-    )
-
-    return predict_ratings_table
-
-
-def select_top_n_recommend_shops(predict_ratings_table, user_id, n):
-    recommend_shops = []
-
-    desc_rating_shop_ids = (
-        predict_ratings_table.loc[user_id, :].sort_values(ascending=False).index
-    )
-
-    for shop_id in desc_rating_shop_ids:
-        recommend_shops.append(shop_id)
-
-        if len(recommend_shops) == n:
-            break
-
-    return recommend_shops
-
-
-def caluculate_recommendations(ratings_table, user_id):
-    predict_ratings_table = create_predict_ratings_table(ratings_table, user_id)
-
-    recommend_shops = select_top_n_recommend_shops(predict_ratings_table, user_id, 3)
-
-    return recommend_shops
+    return recommended_shops
 
 
 def delete_recommendations_from_db(connection, cursor, user_id):
@@ -274,11 +228,11 @@ def recommend(user_id):
 
         ratings_table = load_data(cursor)
 
-        recommend_shops = caluculate_recommendations(ratings_table, user_id)
+        recommended_shops = calculate_recommendations(ratings_table, user_id)
 
-        insert_recommendations_to_db(connection, cursor, user_id, recommend_shops)
+        insert_recommendations_to_db(connection, cursor, user_id, recommended_shops)
 
-        print(recommend_shops)
+        print(recommended_shops)
 
     except Exception as e:
         print(f"Error: {e}")
