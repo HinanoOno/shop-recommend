@@ -93,9 +93,7 @@ def search_common_shops(recommendee, ratings_df, candidate):
 
 
 def find_similar_users(recommendee, ratings_df):
-    similar_users = []
-    similarities = []
-    candidate_avg_ratings = []
+    similar_users_info = {"similar_user": [], "similarity": [], "avg_rating": []}
 
     for candidate in ratings_df.index:
         if recommendee == candidate:
@@ -115,11 +113,13 @@ def find_similar_users(recommendee, ratings_df):
         )
 
         if correlation_coefficent > 0:
-            similar_users.append(candidate)
-            similarities.append(correlation_coefficent)
-            candidate_avg_ratings.append(np.mean(candidate_rated_common_shops))
+            similar_users_info["similar_user"].append(candidate)
+            similar_users_info["similarity"].append(correlation_coefficent)
+            similar_users_info["avg_rating"].append(
+                np.mean(candidate_rated_common_shops)
+            )
 
-    return similar_users, similarities, candidate_avg_ratings
+    return similar_users_info
 
 
 def calculate_rating(
@@ -139,36 +139,39 @@ def calculate_rating(
     return predict_rating
 
 
-def predict_rating(
-    recommendee,
-    shop_id,
-    similar_users,
-    ratings_table,
-    recommendee_avg_rating,
-    similarities,
-    candidate_avg_ratings,
-):
-    similar_users_ratings = ratings_table.loc[similar_users, shop_id].to_numpy()
-    not_nan_similar_users_ratings = ~np.isnan(similar_users_ratings)
+def select_rated_similar_users(similar_users_info, ratings_table, shop_id):
+    similar_users_ratings = ratings_table.loc[
+        similar_users_info["similar_user"], shop_id
+    ].to_numpy()
 
-    if not not_nan_similar_users_ratings.any():
+    exists_similar_users_ratings = ~np.isnan(similar_users_ratings)
+
+    return (
+        similar_users_ratings[exists_similar_users_ratings],
+        np.array(similar_users_info["similarity"])[exists_similar_users_ratings],
+        np.array(similar_users_info["avg_rating"])[exists_similar_users_ratings],
+    )
+
+
+def predict_rating(shop_id, similar_users_info, ratings_table, user_avg_rating):
+
+    (
+        similar_users_ratings,
+        similar_users_similarities,
+        similar_users_avg_ratings,
+    ) = select_rated_similar_users(similar_users_info, ratings_table, shop_id)
+
+    if not similar_users_ratings.any():
         return
 
-    similar_users_ratings = similar_users_ratings[not_nan_similar_users_ratings]
-
-    similar_users_similarities = np.array(similarities)[not_nan_similar_users_ratings]
-    similar_users_avg_ratings = np.array(candidate_avg_ratings)[
-        not_nan_similar_users_ratings
-    ]
-
-    predict_rating = calculate_rating(
-        recommendee_avg_rating,
+    predicted_rating = calculate_rating(
+        user_avg_rating,
         similar_users_similarities,
         similar_users_ratings,
         similar_users_avg_ratings,
     )
 
-    return predict_rating
+    return predicted_rating
 
 
 def sort_key(item):
@@ -176,9 +179,7 @@ def sort_key(item):
 
 
 def calculate_recommendations(ratings_table, user_id):
-    similar_users, similarities, candidate_avg_ratings = find_similar_users(
-        user_id, ratings_table
-    )
+    similar_users = find_similar_users(user_id, ratings_table)
 
     user_avg_rating = ratings_table.loc[user_id, :].mean()
 
@@ -186,13 +187,10 @@ def calculate_recommendations(ratings_table, user_id):
 
     for shop_id in ratings_table.columns:
         predicted_ratings[shop_id] = predict_rating(
-            user_id,
             shop_id,
             similar_users,
             ratings_table,
             user_avg_rating,
-            similarities,
-            candidate_avg_ratings,
         )
 
     desc_sorted_ratings = sorted(predicted_ratings.items(), key=sort_key, reverse=True)
