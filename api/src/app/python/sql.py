@@ -38,22 +38,6 @@ def transform_ratings_table_to_dataframe(pivot_table):
         value_name="rating",
     ).dropna()
 
-
-def create_unrated_df(ratings_table):
-    unrated_mask = ratings_table.isna()
-
-    unrated_table_position = np.column_stack(np.where(unrated_mask))
-
-    unrated_user_shop_pairs = [
-        (ratings_table.index[row], ratings_table.columns[column])
-        for row, column in unrated_table_position
-    ]
-
-    unrated_df = pd.DataFrame(unrated_user_shop_pairs, columns=["user_id", "shop_id"])
-
-    return unrated_df
-
-
 def load_data(cursor):
     try:
         ratings_data = fetch_ratings_data(cursor)
