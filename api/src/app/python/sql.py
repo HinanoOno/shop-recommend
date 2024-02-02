@@ -24,9 +24,9 @@ def convert_ratings_data_to_dataframe(ratings_data):
     return df
 
 
-def transform_ratings_df_to_table(ratings_df):
+def transform_ratings_table_to_table(ratings_table):
     return pd.pivot_table(
-        ratings_df, index="user_id", columns="shop_id", values="rating"
+        ratings_table, index="user_id", columns="shop_id", values="rating"
     )
 
 
@@ -38,13 +38,14 @@ def transform_ratings_table_to_dataframe(pivot_table):
         value_name="rating",
     ).dropna()
 
+
 def load_data(cursor):
     try:
         ratings_data = fetch_ratings_data(cursor)
 
-        ratings_df = convert_ratings_data_to_dataframe(ratings_data)
+        ratings_table = convert_ratings_data_to_dataframe(ratings_data)
 
-        ratings_table = transform_ratings_df_to_table(ratings_df)
+        ratings_table = transform_ratings_table_to_table(ratings_table)
 
         return ratings_table
 
@@ -63,33 +64,38 @@ def pearson_correlation_coefficent(u, v):
     return numerator / denominator
 
 
-def search_common_shops(recommendee, ratings_df, candidate):
-    recommendee_rated_shops = ratings_df.loc[recommendee, :].to_numpy()
-    candidate_rated_shops = ratings_df.loc[candidate, :].to_numpy()
+def find_common_shops_ids(recommendee_rated_shops, candidate_rated_shops):
+    return ~np.isnan(recommendee_rated_shops) & ~np.isnan(candidate_rated_shops)
 
-    common_shops = ~np.isnan(recommendee_rated_shops) & ~np.isnan(candidate_rated_shops)
+def find_common_shops(recommendee, ratings_table, candidate):
+    recommendee_rated_shops = ratings_table.loc[recommendee, :].to_numpy()
+    candidate_rated_shops = ratings_table.loc[candidate, :].to_numpy()
+
+    common_shops_ids = find_common_shops_ids(
+        recommendee_rated_shops, candidate_rated_shops
+    )
 
     recommendee_rated_common_shops, candidate_rated_common_shops = (
-        recommendee_rated_shops[common_shops],
-        candidate_rated_shops[common_shops],
+        recommendee_rated_shops[common_shops_ids],
+        candidate_rated_shops[common_shops_ids],
     )
-    return common_shops, recommendee_rated_common_shops, candidate_rated_common_shops
+
+    return recommendee_rated_common_shops, candidate_rated_common_shops
 
 
-def find_similar_users(recommendee, ratings_df):
+def find_similar_users(recommendee, ratings_table):
     similar_users_info = {"similar_user": [], "similarity": [], "avg_rating": []}
 
-    for candidate in ratings_df.index:
+    for candidate in ratings_table.index:
         if recommendee == candidate:
             continue
 
         (
-            common_shops,
             recommendee_rated_common_shops,
             candidate_rated_common_shops,
-        ) = search_common_shops(recommendee, ratings_df, candidate)
+        ) = find_common_shops(recommendee, ratings_table, candidate)
 
-        if not common_shops.any():
+        if not recommendee_rated_common_shops.any():
             continue
 
         correlation_coefficent = pearson_correlation_coefficent(
