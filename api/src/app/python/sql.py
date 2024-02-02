@@ -122,20 +122,27 @@ def find_similar_users(recommendee, ratings_df):
     return similar_users_info
 
 
+def calculate_normalized_rating_difference(similarities, rating_differences):
+
+    weighted_rating_difference = np.dot(similarities, rating_differences)
+
+    return weighted_rating_difference / similarities.sum()
+
+
 def calculate_rating(
-    recommendee_avg_rating,
+    user_avg_rating,
     similar_users_similarities,
     similar_users_ratings,
     similar_users_avg_ratings,
 ):
-    predict_rating = (
-        recommendee_avg_rating
-        + np.dot(
-            similar_users_similarities,
-            (similar_users_ratings - similar_users_avg_ratings),
-        )
-        / similar_users_similarities.sum()
+    rating_difference = similar_users_ratings - similar_users_avg_ratings
+
+    normalized_rating_difference = calculate_normalized_rating_difference(
+        similar_users_similarities, rating_difference
     )
+
+    predict_rating = user_avg_rating + normalized_rating_difference
+
     return predict_rating
 
 
@@ -210,10 +217,12 @@ def delete_recommendations_from_db(connection, cursor, user_id):
 def insert_recommendations_to_db(connection, cursor, user_id, recommend_shops):
     try:
         delete_recommendations_from_db(connection, cursor, user_id)
+
         for shop_id in recommend_shops:
             sql = "INSERT INTO recommendations (user_id, shop_id) VALUES (%s, %s)"
             val = (user_id, shop_id)
             cursor.execute(sql, val)
+
         connection.commit()
 
     except Exception as e:
