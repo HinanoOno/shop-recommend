@@ -5,7 +5,6 @@ import numpy as np
 import sys
 from collections import defaultdict
 from db_connector import connect_to_db
-from ratings_data_loader import load_ratings_data
 
 
 def fetch_ratings_data(cursor):
@@ -122,7 +121,6 @@ def find_similar_users(recommendee, ratings_table):
 
 
 def calculate_normalized_rating_difference(similarities, rating_differences):
-
     weighted_rating_difference = np.dot(similarities, rating_differences)
 
     return weighted_rating_difference / similarities.sum()
@@ -160,7 +158,6 @@ def select_rated_similar_users(similar_users_info, ratings_table, shop_id):
 
 
 def predict_rating(shop_id, similar_users_info, ratings_table, user_avg_rating):
-
     (
         similar_users_ratings,
         similar_users_similarities,
@@ -210,6 +207,7 @@ def delete_recommendations_from_db(connection, cursor, user_id):
     sql = "DELETE FROM recommendations WHERE user_id = %s"
     val = (user_id,)
     cursor.execute(sql, val)
+    
     connection.commit()
 
 
