@@ -129,11 +129,8 @@ def calculate_normalized_rating_difference(similarities, rating_differences):
 def calculate_rating(
     user_avg_rating,
     similar_users_similarities,
-    similar_users_ratings,
-    similar_users_avg_ratings,
+    rating_difference,
 ):
-    rating_difference = similar_users_ratings - similar_users_avg_ratings
-
     normalized_rating_difference = calculate_normalized_rating_difference(
         similar_users_similarities, rating_difference
     )
@@ -167,11 +164,12 @@ def predict_rating(shop_id, similar_users_info, ratings_table, user_avg_rating):
     if not similar_users_ratings.any():
         return
 
+    rating_diffrence = similar_users_ratings - similar_users_avg_ratings
+
     predicted_rating = calculate_rating(
         user_avg_rating,
         similar_users_similarities,
-        similar_users_ratings,
-        similar_users_avg_ratings,
+        rating_diffrence,
     )
 
     return predicted_rating
@@ -207,7 +205,7 @@ def delete_recommendations_from_db(connection, cursor, user_id):
     sql = "DELETE FROM recommendations WHERE user_id = %s"
     val = (user_id,)
     cursor.execute(sql, val)
-    
+
     connection.commit()
 
 
