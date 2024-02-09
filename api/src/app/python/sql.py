@@ -23,9 +23,9 @@ def convert_ratings_data_to_dataframe(ratings_data):
     return df
 
 
-def transform_ratings_table_to_table(ratings_table):
+def dataframe_to_table(dataframe):
     return pd.pivot_table(
-        ratings_table, index="user_id", columns="shop_id", values="rating"
+        dataframe, index="user_id", columns="shop_id", values="rating"
     )
 
 
@@ -42,9 +42,9 @@ def load_data(cursor):
     try:
         ratings_data = fetch_ratings_data(cursor)
 
-        ratings_table = convert_ratings_data_to_dataframe(ratings_data)
+        dataframe = convert_ratings_data_to_dataframe(ratings_data)
 
-        ratings_table = transform_ratings_table_to_table(ratings_table)
+        ratings_table = dataframe_to_table(dataframe)
 
         return ratings_table
 
