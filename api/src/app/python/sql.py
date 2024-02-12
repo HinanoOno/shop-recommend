@@ -106,11 +106,11 @@ def find_similar_users(recommendee, ratings_table):
         if not recommendee_rated_common_shops.any():
             continue
 
-        correlation_coefficent = pearson_correlation_coefficent(
-            recommendee_rated_common_shops, candidate_rated_common_shops
-        )
-
-        if correlation_coefficent > 0:
+        if (
+            correlation_coefficent := pearson_correlation_coefficent(
+                recommendee_rated_common_shops, candidate_rated_common_shops
+            )
+        ) > 0:
             similar_users_info["similar_user"].append(candidate)
             similar_users_info["similarity"].append(correlation_coefficent)
             similar_users_info["avg_rating"].append(
