@@ -16,7 +16,7 @@ def fetch_ratings_data(cursor):
 
 
 def convert_ratings_data_to_dataframe(ratings_data):
-    data_array = np.array([(row[0], row[1], row[2]) for row in ratings_data])
+    data_array = np.array(ratings_data)
     columns = ["user_id", "shop_id", "rating"]
     df = pd.DataFrame(data_array, columns=columns)
 
