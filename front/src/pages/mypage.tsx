@@ -45,6 +45,7 @@ const MyPage = () => {
       try {
         if (auth?.user) {
           const responses = await apiClient.python._userId(5).$get();
+          console.log(responses);
           const shopDataArray = await Promise.all(
             responses.map(async (response) => {
               const data = await apiClient.shop._shop_id(response).$get();
@@ -59,12 +60,12 @@ const MyPage = () => {
     };
     recommendData();
   }, [auth]);
-  console.log(recommend_shops);
+
 
   if (!auth?.user) {
     return <p>ログインしていません。</p>;
   }
-  console.log(shops);
+  console.log(recommend_shops);
 
   return (
     <>
