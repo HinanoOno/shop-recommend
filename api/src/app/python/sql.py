@@ -9,7 +9,6 @@ from typing import Any, Type
 
 
 class DataLoader:
-    # anyでいいのか？
     def __init__(self, cursor):
         self.cursor = cursor
 
