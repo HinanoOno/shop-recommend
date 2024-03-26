@@ -91,15 +91,16 @@ class Recommendee:
         self.id = user_id
         self.similar_users = SimilarUsers()
 
+
 class SimilarUsersFinder:
     def __init__(self, ratings_table: pd.DataFrame, user_id: int):
         self.ratings_table = ratings_table
-        self.recommendee = Recommendee(user_id)   
+        self.recommendee = Recommendee(user_id)
 
-    def find_rated_shops(
-        self, candidate: int
-    ) -> tuple[np.ndarray, np.ndarray]:
-        recommendee_rated_shops = self.ratings_table.loc[self.recommendee.id, :].to_numpy()
+    def find_rated_shops(self, candidate: int) -> tuple[np.ndarray, np.ndarray]:
+        recommendee_rated_shops = self.ratings_table.loc[
+            self.recommendee.id, :
+        ].to_numpy()
         candidate_rated_shops = self.ratings_table.loc[candidate, :].to_numpy()
         return recommendee_rated_shops, candidate_rated_shops
 
@@ -108,10 +109,10 @@ class SimilarUsersFinder:
     ) -> np.ndarray:
         return ~np.isnan(recommendee_rated_shops) & ~np.isnan(candidate_rated_shops)
 
-    def find_common_shops(
-        self, candidate: int
-    ) -> tuple[np.ndarray, np.ndarray]:
-        recommendee_rated_shops, candidate_rated_shops = self.find_rated_shops(candidate)
+    def find_common_shops(self, candidate: int) -> tuple[np.ndarray, np.ndarray]:
+        recommendee_rated_shops, candidate_rated_shops = self.find_rated_shops(
+            candidate
+        )
 
         common_shops_ids = self.find_common_shops_ids(
             recommendee_rated_shops, candidate_rated_shops
@@ -124,9 +125,7 @@ class SimilarUsersFinder:
 
         return recommendee_rated_common_shops, candidate_rated_common_shops
 
-    def find_similar_users(
-        self
-    ) -> tuple[list[int], list[float], list[float]]:
+    def find_similar_users(self) -> tuple[list[int], list[float], list[float]]:
         for candidate in self.ratings_table.index:
             if self.recommendee.id == candidate:
                 continue
@@ -155,8 +154,8 @@ class SimilarUsersFinder:
         )
 
     def select_rated_similar_users(
-        self,shop_id: int
-    )-> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        self, shop_id: int
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         similar_users_list, similarities, avg_ratings = self.find_similar_users()
 
         similar_users_ratings = self.ratings_table.loc[
@@ -171,9 +170,10 @@ class SimilarUsersFinder:
             np.array(avg_ratings)[exists_similar_users_ratings],
         )
 
+
 class Recommender:
-    def __init__(self,ratings_table: pd.DataFrame, user_id: int):
-        self.similarUsersFinder = SimilarUsersFinder(ratings_table,user_id)
+    def __init__(self, ratings_table: pd.DataFrame, user_id: int):
+        self.similarUsersFinder = SimilarUsersFinder(ratings_table, user_id)
         self.ratings_table = ratings_table
 
     @staticmethod
@@ -222,7 +222,9 @@ class Recommender:
 
     def recommend(self):
 
-        user_avg_rating = self.ratings_table.loc[self.similarUsersFinder.recommendee.id, :].mean()
+        user_avg_rating = self.ratings_table.loc[
+            self.similarUsersFinder.recommendee.id, :
+        ].mean()
 
         predicted_ratings = {}
 
@@ -236,7 +238,6 @@ class Recommender:
         recommended_shops = [shop_id for shop_id, _ in desc_sorted_ratings[:3]]
 
         return recommended_shops
-        
 
 
 def main(user_id):
@@ -245,10 +246,10 @@ def main(user_id):
         dataAccessor = DataAccessor(cursor, connection)
         ratings_table = dataAccessor.load_data()
 
-        answer = Recommender(ratings_table, user_id).recommend()
+        recommend_shops = Recommender(ratings_table, user_id).recommend()
 
-        dataAccessor.insert_recommendations_to_db(user_id, answer)
-        print(answer)
+        dataAccessor.insert_recommendations_to_db(user_id, recommend_shops)
+        print(recommend_shops)
 
     except Exception as e:
         print(f"Error: {e}")
