@@ -61,7 +61,7 @@ class DataAccessor:
 
     def insert_recommendations_to_db(self, user_id, recommend_shops):
         try:
-            delete_recommendations_from_db(self.connection, self.cursor, user_id)
+            self.delete_recommendations_from_db(user_id)
 
             for shop_id in recommend_shops:
                 sql = "INSERT INTO recommendations (user_id, shop_id) VALUES (%s, %s)"
@@ -177,17 +177,19 @@ class Recommender:
         self.ratings_table = ratings_table
 
     @staticmethod
-    def calculate_normalized_rating_difference(similarities, rating_differences):
+    def calculate_normalized_rating_difference(
+        similarities: np.ndarray, rating_differences: np.ndarray
+    ) -> float:
         weighted_rating_difference = np.dot(similarities, rating_differences)
 
         return weighted_rating_difference / similarities.sum()
 
     def calculate_rating(
         self,
-        user_avg_rating,
-        similar_users_similarities,
-        rating_difference,
-    ):
+        user_avg_rating: float,
+        similar_users_similarities: np.ndarray,
+        rating_difference: np.ndarray,
+    ) -> float:
         normalized_rating_difference = self.calculate_normalized_rating_difference(
             similar_users_similarities, rating_difference
         )
@@ -196,7 +198,7 @@ class Recommender:
 
         return predict_rating
 
-    def predict_rating(self, shop_id, user_avg_rating):
+    def predict_rating(self, shop_id: int, user_avg_rating: float) -> float | None:
         (
             similar_users_ratings,
             similar_users_similarities,
@@ -204,7 +206,7 @@ class Recommender:
         ) = self.similarUsersFinder.select_rated_similar_users(shop_id)
 
         if not similar_users_ratings.any():
-            return
+            return None
 
         rating_diffrence = similar_users_ratings - similar_users_avg_ratings
 
@@ -217,10 +219,10 @@ class Recommender:
         return predicted_rating
 
     @staticmethod
-    def sort_key(item):
+    def sort_key(item: tuple[str, float | None]) -> float:
         return item[1] if item[1] is not None else float("-inf")
 
-    def recommend(self):
+    def recommend(self) -> list[int]:
 
         user_avg_rating = self.ratings_table.loc[
             self.similarUsersFinder.recommendee.id, :
