@@ -77,9 +77,6 @@ class RatingsManager:
             print(f"Error: {e}")
         return None
 
-    def get_ratings_table(self) -> pd.DataFrame:
-        return self.ratings_table
-
 
 class UserSimilarity:
     def __init__(self, ratings_table: pd.DataFrame):
@@ -153,7 +150,7 @@ class UserSimilarity:
 class Recommender:
     def __init__(self, ratings_manager, user_id: int):
         self.user_id = user_id
-        self.ratings_table = ratings_manager.get_ratings_table()
+        self.ratings_table = ratings_manager.ratings_table
         self.user_similarity = UserSimilarity(self.ratings_table)
 
     @staticmethod
@@ -164,7 +161,7 @@ class Recommender:
 
         return weighted_rating_difference / similarities.sum()
 
-    def calculate_rating(
+    def calculate_ratings(
         self,
         user_avg_rating: float,
         similar_users_similarities: np.ndarray,
@@ -188,12 +185,12 @@ class Recommender:
         if not similar_users_ratings.any():
             return None
 
-        rating_diffrence = similar_users_ratings - similar_users_avg_ratings
+        rating_diffrences = similar_users_ratings - similar_users_avg_ratings
 
-        predicted_rating = self.calculate_rating(
+        predicted_rating = self.calculate_ratings(
             user_avg_rating,
             similar_users_similarities,
-            rating_diffrence,
+            rating_diffrences,
         )
 
         return predicted_rating
